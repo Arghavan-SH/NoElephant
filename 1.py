@@ -5,10 +5,21 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 TOKEN=os.getenv("TELEGRAM_TOKEN")
 
+if not TOKEN:
+    raise ValueError("TELEGRAM_TOKEN not found in.env file")
+
 user_states={}
-ALLOWED_LEVELS = ["A2","B1","B2","C1"]
+
+def build_keyboard(options:list[list[str]])->ReplyKeyboardMarkup:
+    keyboard =[[KeyboardButton(text) for text in row] for row in options]
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
 
 async def start(update:Update, Contextx:ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -20,12 +31,15 @@ async def start(update:Update, Contextx:ContextTypes.DEFAULT_TYPE):
     "feedback_language":None,
     "task":None,
     }
+    reply_markup = build_keyboard([
+        ["A2","B1"],
+        ["B2","C1"],
+    ])
     await update.message.reply_text(
-        "Hello 👋 I am NoElephant.\n\n"
+        "Hello 👋 I am NoElephant.\n\n What is your Italian level",
+        reply_markup=reply_markup,
         )
-    await update.message.reply_text(
-        "What is your Italian level?\n"
-        "Please type: A2,B1,B2,or C1")
+    
     
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -37,20 +51,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     phase = user_states[user_id]["phase"]
 
-    # ----Waiting for italian Level-----
+    \
 
     if phase == "WAITING_LEVEL":
-        if text in ALLOWED_LEVELS:
+        if text in {"A2", "B1", "B2", "C1"}:
             user_states[user_id]["italian_level"] = text
             user_states[user_id]["phase"] = "WAITING_FEEDBACK_LANG"
 
+            reply_markup = build_keyboard([
+                ["IT"],
+                ["IT+EN"]
+            ])
+            
+
             await update.message.reply_text(
                 "Thank you.\n\n"
-                "Preferred feedback language?\n"
-                "Type: IT or IT+EN"
+                "Preferred feedback language?\n",
+                reply_markup=reply_markup
             )
         else:
-            await update.message.reply_text("Invalid level. Type: A2, B1, B2, C1")
+            await update.message.reply_text(
+                "Please choose a valid option using the buttons.")
 
     #---- Waiting for feedback Language--------        
     elif phase == "WAITING_FEEDBACK_LANG":
@@ -59,16 +80,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_states[user_id]["feedback_lang"] = text
             user_states[user_id]["phase"] = "WAITING_TASK"
 
-            keyboard = [
-                [KeyboardButton("INTERVIEW")],
-                [KeyboardButton("EXTRA(coming soon)")],
-            ]
-
-            reply_markup = ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard= True,
-                one_time_keyboard= True,
-            )
+            reply_markup = build_keyboard([
+               ["INTERVIEW"],
+               ["EXTRA (Coming Soon)"], 
+            ])
+            
 
             await update.message.reply_text(
                 "Greate! Now choose your task:",
@@ -76,7 +92,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await update.message.reply_text(
-                "Invalid option. Please type: IT or IT+EN"
+                "Please choose a valid option using the buttons."
             )
     #-----Waiting for task selection-----
     elif phase =="WAITING_TASK":
