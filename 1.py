@@ -21,7 +21,7 @@ def build_keyboard(options:list[list[str]])->ReplyKeyboardMarkup:
         one_time_keyboard=True,
     )
 
-async def start(update:Update, Contextx:ContextTypes.DEFAULT_TYPE):
+async def start(update:Update, context:ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     # Initialize user state 
@@ -51,8 +51,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     phase = user_states[user_id]["phase"]
 
-    \
-
     if phase == "WAITING_LEVEL":
         if text in {"A2", "B1", "B2", "C1"}:
             user_states[user_id]["italian_level"] = text
@@ -77,7 +75,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif phase == "WAITING_FEEDBACK_LANG":
 
         if text in ["IT","IT+EN"]:
-            user_states[user_id]["feedback_lang"] = text
+            user_states[user_id]["feedback_language"] = text
             user_states[user_id]["phase"] = "WAITING_TASK"
 
             reply_markup = build_keyboard([
@@ -104,7 +102,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Please upload your CV (PDF or text).",
                 reply_markup=ReplyKeyboardRemove(),
             )
-        elif text.startwith("EXTRA"):
+        elif text.startswith("EXTRA"):
             await update.message.reply_text(
                 "This feature is coming soon 🙂"
             )
@@ -113,7 +111,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Please choose a valid option using the buttons."
             )
     #------ Waiting for CV (placeholder)----
-    elif phase=="WaITING_CV":
+    elif phase=="WAITING_CV":
         await update.message.reply_text(
             "cv handling will be implemented next."
         )
