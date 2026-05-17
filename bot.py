@@ -1,19 +1,27 @@
+import os
 from telegram import Update,ReplyKeyboardRemove
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram.ext import MessageHandler, filters
+from telegram.request import HTTPXRequest
 
-from config import TOKEN
+from config import TOKEN, UPLOAD_DIR, ALLOWED_EXTENSIONS
 from state import (
     user_states,
     create_user_state,
     WAITING_LEVEL,
     WAITING_FEEDBACK_LANG,
     WAITING_TASK,
-    WAITING_CV
+    WAITING_CV,
+    WAITING_JD,
 )
 from keyboards import build_keyboard
 
+def ensure_upload_dir():
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+def is_allowed_file(filename:str) -> bool:
+    _, ext = os.path.splitext(filename.lower())
+    return ext in ALLOWED_EXTENSIONS
 
 
 async def start(update:Update, context:ContextTypes.DEFAULT_TYPE):
@@ -111,12 +119,62 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Unexpected state. Please type /start."
         )
 
+async def handle_document(update: Update, context:ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if user_id not in user_states:
+        await update.message.reply_text("Please type /start to begin")
+        return
+
+    phase = user_states[user_id]["phase"]
+    document = update.message.document
+
+    if phase !=WAITING_CV:
+        await update.message.reply_text(
+            "I was not expecting a document right now."
+        )
+        return
+    filename = document.file_name or "uploaded_file"
+
+    if not is_allowed_file(filename):
+        await update.message.reply_text(
+        "Unsupported file type. Please upload a PDF or TXT file."
+        )
+        return
+    
+
+    ensure_upload_dir()
+
+    safe_filename = f"{user_id}_cv_{filename}"
+    file_path = os.path.join(UPLOAD_DIR,safe_filename)
+
+    telegram_file = await document.get_file()
+    await telegram_file.download_to_drive(file_path)
+
+    user_states[user_id]["cv_file_path"] = file_path
+    user_states[user_id]["phase"] = WAITING_JD
+
+    await update.message.reply_text(
+        "CV received successfully ✅\n\nNow please upload the job description (PDF or TXT)."
+    )
+
+
+
+
+    
     
 
 def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+    request = HTTPXRequest(
+        connect_timeout=20.0,
+        read_timeout=20.0,
+        write_timeout=20.0,
+        pool_timeout=20.0,
+    )
+    app = ApplicationBuilder().token(TOKEN).request(request).build()
 
     app.add_handler(CommandHandler("start",start))
+    app.add_handler(MessageHandler(filters.Document.ALL,handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Bot is running ...")

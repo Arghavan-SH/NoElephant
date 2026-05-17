@@ -13,5 +13,5 @@ def create_user_state() -> dict:
         "feedback_language": None,
         "task": None,
         "cv_file_path": None,
-        "jd_file_path": NotImplemented
+        "jd_file_path": None,
     }
