@@ -2,6 +2,7 @@ WAITING_LEVEL = "WAITING_LEVEL"
 WAITING_FEEDBACK_LANG ="WAITING_FEEDBACK_LANG"
 WAITING_TASK = "WAITING_TASK"
 WAITING_CV = "WAITING_CV"
+WAITING_CV_CONFIRMATION = "WAITING_CV_CONFIRMATION"
 WAITING_JD = "WAITING_JD"
 
 user_states = {}
@@ -13,5 +14,7 @@ def create_user_state() -> dict:
         "feedback_language": None,
         "task": None,
         "cv_file_path": None,
+        "cv_text": None,
+        "cv_summary":None,
         "jd_file_path": None,
     }

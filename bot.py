@@ -12,6 +12,7 @@ from state import (
     WAITING_FEEDBACK_LANG,
     WAITING_TASK,
     WAITING_CV,
+    WAITING_CV_CONFIRMATION,
     WAITING_JD,
 )
 from keyboards import build_keyboard
@@ -152,11 +153,11 @@ async def handle_document(update: Update, context:ContextTypes.DEFAULT_TYPE):
     await telegram_file.download_to_drive(file_path)
 
     user_states[user_id]["cv_file_path"] = file_path
-    user_states[user_id]["phase"] = WAITING_JD
+    user_states[user_id]["phase"] = WAITING_CV_CONFIRMATION
 
-    await update.message.reply_text(
-        "CV received successfully ✅\n\nNow please upload the job description (PDF or TXT)."
-    )
+    # await update.message.reply_text(
+    #     "CV received successfully ✅\n\nNow please upload the job description (PDF or TXT)."
+    # )
 
 
 
