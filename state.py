@@ -16,5 +16,6 @@ def create_user_state() -> dict:
         "cv_file_path": None,
         "cv_text": None,
         "cv_summary":None,
+        "cv_validation_result":None,
         "jd_file_path": None,
     }
