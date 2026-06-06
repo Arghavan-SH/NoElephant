@@ -235,6 +235,25 @@ async def handle_document(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user_id = update.effective_user.id
+
+    if user_id not in user_states:
+        await update.message.reply_text("Please type /start to begin.")
+        return
+    
+    phase = user_states[user_id]["phase"]
+
+    if phase == WAITING_CV:
+        await update.message.reply_text(
+            "Images are not supported for CV upload. Please upload your CV as a PDF or DOCX document."
+        )
+    else:
+        await update.message.reply_text(
+            "I was not expecting an image right now."
+        )
+        
 
     
     
@@ -250,6 +269,7 @@ def main():
 
     app.add_handler(CommandHandler("start",start))
     app.add_handler(MessageHandler(filters.Document.ALL,handle_document))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Bot is running ...")
