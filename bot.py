@@ -4,9 +4,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram.ext import MessageHandler, filters
 from telegram.request import HTTPXRequest
 
-from pypdf import PdfReader
-from docx import Document
-
+from utils.file_reader import extract_text_from_file
+from utils.validation import is_allowed_file, validate_extracted_text
 from config import TOKEN, UPLOAD_DIR, ALLOWED_EXTENSIONS
 from state import (
     user_states,
@@ -23,50 +22,6 @@ from keyboards import build_keyboard
 def ensure_upload_dir():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def is_allowed_file(filename:str) -> bool:
-    _, ext = os.path.splitext(filename.lower())
-    return ext in ALLOWED_EXTENSIONS
-
-def extract_text_from_file(file_path:str) -> str:
-    _, ext = os.path.splitext(file_path.lower())
-
-    
-        
-    if ext == ".pdf":
-        reader = PdfReader(file_path)
-        pages_text = []
-
-        for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                pages_text.append(page_text)
-
-        return "\n".join(pages_text)
-    
-    elif ext == ".docx":
-        doc = Document(file_path)
-        paragraphs = []
-
-        for para in doc.paragraphs:
-            if para.text.strip():
-                paragraphs.append(para.text.strip()) 
-        
-        return "\n".join(paragraphs)
-
-    else:
-        raise ValueError(f"Unsupported file type for extraction: {ext}")
-
-def validate_extracted_text(text:str) -> tuple[bool,str]:
-    cleaned = text.strip()
-
-    if not cleaned:
-        return False, "The file was read, but no text could be extracted."
-    
-    if len (cleaned) < 200:
-        return False, "The extracted text is too short to be a usable CV."
-    
-    return True, "Text extraction successful."
-    
 
 
 async def start(update:Update, context:ContextTypes.DEFAULT_TYPE):
